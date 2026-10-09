@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "prompt-contract-check"
+version = "0.1.0"
+description = "Offline static placeholder and path checks for small prompt packs"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=8,<9"]
+
+[project.scripts]
+prompt-contract-check = "prompt_contract_check.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
