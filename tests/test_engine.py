@@ -61,6 +61,15 @@ def test_unsafe_or_missing_paths_are_diagnosed(tmp_path, path):
     assert result["diagnostics"]
 
 
+def test_absolute_path_is_rejected_even_when_it_resolves_inside_pack(tmp_path):
+    (tmp_path / "prompt.txt").write_text("Use {{known}}.", encoding="utf-8")
+    absolute_path = str((tmp_path / "prompt.txt").resolve())
+    manifest = {"version": 1, "templates": [{"id": "x", "path": absolute_path, "variables": ["known"]}]}
+    result = validate(manifest, tmp_path)
+    assert result["valid_count"] == 0
+    assert any(diagnostic["code"] == "absolute_path" for diagnostic in result["diagnostics"])
+
+
 def test_invalid_utf8_is_diagnosed(tmp_path):
     (tmp_path / "bad.txt").write_bytes(b"hello \xff")
     result = validate({"version": 1, "templates": [{"id": "x", "path": "bad.txt", "variables": []}]}, tmp_path)

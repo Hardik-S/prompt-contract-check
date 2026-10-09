@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import re
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 from typing import Any, Mapping
 
 
@@ -71,20 +71,32 @@ def validate(manifest: Any, base_dir: str | Path) -> dict[str, Any]:
             add(template_id, relative_path, "invalid_path", None, "template path must not be empty")
             target = None
         else:
-            candidate = (root / relative_path).resolve()
-            try:
-                candidate.relative_to(root)
-            except ValueError:
+            supplied_path = Path(relative_path)
+            windows_path = PureWindowsPath(relative_path)
+            if (
+                supplied_path.is_absolute()
+                or windows_path.is_absolute()
+                or windows_path.drive
+                or windows_path.root
+            ):
                 target = None
-                add(template_id, relative_path, "path_outside_base", None,
-                    "template path resolves outside the manifest directory")
+                add(template_id, relative_path, "absolute_path", None,
+                    "template path must be relative to the manifest directory")
             else:
-                normalized = candidate.relative_to(root).as_posix()
-                if normalized in seen_paths:
-                    add(template_id, relative_path, "duplicate_path", None, "template path is duplicated")
+                candidate = (root / relative_path).resolve()
+                try:
+                    candidate.relative_to(root)
+                except ValueError:
+                    target = None
+                    add(template_id, relative_path, "path_outside_base", None,
+                        "template path resolves outside the manifest directory")
                 else:
-                    seen_paths.add(normalized)
-                target = candidate
+                    normalized = candidate.relative_to(root).as_posix()
+                    if normalized in seen_paths:
+                        add(template_id, relative_path, "duplicate_path", None, "template path is duplicated")
+                    else:
+                        seen_paths.add(normalized)
+                    target = candidate
 
         declared: set[str] = set()
         for variable in entry["variables"]:
