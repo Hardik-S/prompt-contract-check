@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "templates": [
+    {
+      "id": "welcome",
+      "path": "welcome.txt",
+      "variables": ["first_name"]
+    },
+    {
+      "id": "summary",
+      "path": "summary.txt",
+      "variables": ["topic", "length"]
+    }
+  ]
+}
