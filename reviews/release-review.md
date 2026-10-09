@@ -32,3 +32,26 @@ Result: exit 0, `template_count: 1`, `valid_count: 1`, and no diagnostics. The s
 - CI run [37956760173](https://github.com/Hardik-S/prompt-contract-check/actions/runs/37956760173) is for this exact SHA and completed successfully. Ubuntu and Windows jobs each passed for Python 3.10 and 3.13, including install, tests, and installed CLI quickstart.
 
 **Release gate:** keep blocked until absolute in-root paths are rejected and the focused regression test plus required checks pass on the repaired commit. No files other than this review were changed; no commit or push was made.
+
+## Follow-up review for issue #6
+
+**Recommendation: PASS for the bounded absolute/rooted/drive-qualified path repair.** The original issue #4 BLOCK report and reproduction above are retained unchanged as historical review evidence. This follow-up verifies that the identified defect is fixed on commit `803544a25ef553db8174904d3398dbdf16dd1a25` (`Reject absolute prompt template paths`), which matched `HEAD` and `origin/main` during review.
+
+### Checks completed
+
+- Fresh environment: `python --version` reported Python 3.13.1. `python -m venv C:\Users\hshre\AppData\Local\Temp\pcc-review-31aedd9ca703495a8185a24a6988ce3b\venv`; `C:\Users\hshre\AppData\Local\Temp\pcc-review-31aedd9ca703495a8185a24a6988ce3b\venv\Scripts\python.exe -m pip install .` built and installed `prompt-contract-check 0.1.0`; `C:\Users\hshre\AppData\Local\Temp\pcc-review-31aedd9ca703495a8185a24a6988ce3b\venv\Scripts\python.exe -m pip install 'pytest>=8,<9'` installed pytest 8.4.2.
+- Full tests: `C:\Users\hshre\AppData\Local\Temp\pcc-review-31aedd9ca703495a8185a24a6988ce3b\venv\Scripts\python.exe -m pytest` — **21 passed**.
+- README valid quickstart: `C:\Users\hshre\AppData\Local\Temp\pcc-review-31aedd9ca703495a8185a24a6988ce3b\venv\Scripts\prompt-contract-check.exe validate examples/valid-pack/manifest.json --format text` — exit 0, 2 templates valid.
+- README invalid example: `C:\Users\hshre\AppData\Local\Temp\pcc-review-31aedd9ca703495a8185a24a6988ce3b\venv\Scripts\prompt-contract-check.exe validate examples/invalid-pack/manifest.json --format json` — exit 2, undeclared and unused variable diagnostics; no prompt body printed.
+- Absolute existing in-root file: `C:\Users\hshre\AppData\Local\Temp\pcc-review-31aedd9ca703495a8185a24a6988ce3b\venv\Scripts\prompt-contract-check.exe validate <temp>\manifest.json --format json`, with manifest path set to the existing `C:\Users\hshre\AppData\Local\Temp\pcc-review-31aedd9ca703495a8185a24a6988ce3b\safe.txt` — exit 2, `absolute_path`.
+- Rooted existing in-root file: same command with `path` set to `\Users\hshre\AppData\Local\Temp\pcc-review-31aedd9ca703495a8185a24a6988ce3b\safe.txt` — confirmed the target exists on the current drive; exit 2, `absolute_path`. POSIX-rooted spelling of the same existing file also exited 2 with `absolute_path`.
+- Drive-qualified `C:safe.txt` — exit 2, `absolute_path`.
+- Additional adversarial cases: `../outside.txt` exited 2 with `path_outside_base`; a symlink `escape.txt` to a file outside the manifest directory exited 2 with `path_outside_base`.
+- Valid relative `safe.txt` pointing to the existing in-root file — exit 0, 1/1 valid.
+- GitHub Actions run [37957328376](https://github.com/Hardik-S/prompt-contract-check/actions/runs/37957328376) — completed successfully on exact SHA `803544a25ef553db8174904d3398dbdf16dd1a25`; all four Ubuntu/Windows × Python 3.10/3.13 jobs passed install, tests, and installed CLI quickstart.
+
+### Finding and release review
+
+The validator now detects `Path.is_absolute()`, `PureWindowsPath.is_absolute()`, Windows drive, and Windows root before joining or resolving the supplied path. The regression test covers an absolute path to an existing in-root file. The independent checks confirm absolute, rooted, and drive-qualified paths are rejected before target-file validation, while relative in-root paths remain accepted and traversal/symlink containment remains enforced. No blocker found for the bounded repair. **Issue #4's original BLOCK record remains above, unchanged; this follow-up verifies its path-specific repair.**
+
+No files outside `reviews/release-review.md` were edited. No commit or push was made.
